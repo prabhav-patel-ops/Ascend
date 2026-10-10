@@ -168,7 +168,7 @@ export function Onboard({ profile, todayKey, onComplete }) {
       .sort((left, right) => (left.mins || 0) - (right.mins || 0))
       .slice(0, 2)
       .map((h) => h.key);
-    if (starterHabits.length < 2) return;
+    if (starterHabits.length < 1) return;
     onComplete({
       ...a,
       domains: [domain.key],
@@ -230,7 +230,7 @@ export function Onboard({ profile, todayKey, onComplete }) {
                   Start with a simple board
                 </button>
                 <p className="faint" style={{ margin: "8px 0 0" }}>
-                  Two starter quests from your first focus. You can tailor your board later.
+                  A small starter board from your first focus. You can tailor it later.
                   Or continue through setup for the full version.
                 </p>
               </div>
