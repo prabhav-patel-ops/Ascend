@@ -583,7 +583,7 @@ function Hunter({ profile, onSignOut }) {
   const backupNow = async () => {
     const name = `ascend-backup-${new Date().toISOString().slice(0, 10)}.json`;
     const result = await saveFile(exportJson(state), name, "application/json");
-    flash(result.ok ? "Backup saved. Keep the file somewhere safe." : result.reason);
+    flash(result.ok ? "Progress backup saved. Added media files are not included." : result.reason);
   };
 
   const level = levelFromTotalXp(state.totalXp).level;
