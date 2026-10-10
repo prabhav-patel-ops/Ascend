@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { load, save, emptyState } from "./store.js";
+import { load, save, emptyState, exportJson } from "./store.js";
+import { saveFile } from "./download.js";
 import {
   dateKey, shiftKey, generateDay, recomputeTotals, computeStreak,
   levelFromTotalXp, rankFromLevel, applyRatchet, daysBetween,
@@ -22,7 +23,6 @@ import Dungeon from "./screens/Dungeon.jsx";
 import Calendar from "./screens/Calendar.jsx";
 import Focus from "./screens/Focus.jsx";
 import Shadows from "./screens/Shadows.jsx";
-import SystemChat from "./screens/System.jsx";
 import Creed from "./screens/Creed.jsx";
 
 const MAX_BACKFILL = 7;
@@ -68,8 +68,10 @@ const TABS = [
   { id: "focus", label: "Focus", icon: FocusIcon },
   { id: "creed", label: "Creed", icon: CreedIcon },
   { id: "shadows", label: "Shadows", icon: Ico.shadow },
-  { id: "system", label: "System", icon: Ico.system },
 ];
+
+const PRIMARY_TABS = TABS.filter((t) => ["quests", "status", "calendar", "gates"].includes(t.id));
+const MORE_TABS = TABS.filter((t) => !PRIMARY_TABS.includes(t));
 
 /* The drifting field behind the board. Pure decoration, rendered once
    at the shell so no screen has to know about it, and animated only
@@ -128,6 +130,7 @@ export default function App() {
 function Hunter({ profile, onSignOut }) {
   const [state, setState] = useState(() => load(profile.id));
   const [tab, setTab] = useState("quests");
+  const [moreOpen, setMoreOpen] = useState(false);
   const [levelUp, setLevelUp] = useState(null);
   const [levelDown, setLevelDown] = useState(null);
   const [toast, setToast] = useState(null);
@@ -563,6 +566,8 @@ function Hunter({ profile, onSignOut }) {
   /* Which way the tab bar moved decides which way the page slides, so
      forward and back feel different and the app keeps a sense of place. */
   const tabIndex = Math.max(0, TABS.findIndex((t) => t.id === tab));
+  const primaryIndex = PRIMARY_TABS.findIndex((t) => t.id === tab);
+  const navIndex = primaryIndex >= 0 ? primaryIndex : PRIMARY_TABS.length;
   const lastTab = useRef(tabIndex);
   const dir = tabIndex >= lastTab.current ? 1 : -1;
   useEffect(() => { lastTab.current = tabIndex; }, [tabIndex]);
@@ -574,6 +579,12 @@ function Hunter({ profile, onSignOut }) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const backupNow = async () => {
+    const name = `ascend-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    const result = await saveFile(exportJson(state), name, "application/json");
+    flash(result.ok ? "Backup saved. Keep the file somewhere safe." : result.reason);
+  };
 
   const level = levelFromTotalXp(state.totalXp).level;
   const rank = rankFromLevel(level);
@@ -596,6 +607,7 @@ function Hunter({ profile, onSignOut }) {
           <div className="topbar-name">{state.hunter.name}</div>
           <div className="topbar-sub">Level {level} · {state.streak.current} day streak</div>
         </div>
+        <button className="ghost" style={{ marginLeft: "auto", fontSize: 11, padding: "7px 10px" }} onClick={backupNow} aria-label="Export a backup of your progress">Backup</button>
       </header>
 
       {alerts.length > 0 && (
@@ -635,17 +647,34 @@ function Hunter({ profile, onSignOut }) {
         {tab === "focus" && <Focus {...shared} />}
         {tab === "creed" && <Creed {...shared} />}
         {tab === "shadows" && <Shadows {...shared} />}
-        {tab === "system" && <SystemChat {...shared} />}
       </main>
 
-      <nav className="nav" style={{ "--mn-tabs": TABS.length, "--mn-active": tabIndex }}>
+      {moreOpen && (
+        <div role="menu" aria-label="More sections" style={{
+          position: "fixed", left: 12, right: 12, bottom: "calc(78px + env(safe-area-inset-bottom))",
+          zIndex: 80, padding: 12, borderRadius: 14, background: "#102336",
+          border: "1px solid #3d667b", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8,
+          boxShadow: "0 12px 32px #0009",
+        }}>
+          {MORE_TABS.map((t) => (
+            <button key={t.id} role="menuitem" className="ghost"
+              onClick={() => { setTab(t.id); setMoreOpen(false); }}>{t.label}</button>
+          ))}
+        </div>
+      )}
+      <nav className="nav" style={{ "--mn-tabs": PRIMARY_TABS.length + 1, "--mn-active": navIndex }}>
         <span className="mn-nav-pill" aria-hidden="true" />
-        {TABS.map((t) => (
-          <button key={t.id} data-on={tab === t.id} onClick={() => setTab(t.id)} aria-label={t.label}>
+        {PRIMARY_TABS.map((t) => (
+          <button key={t.id} data-on={tab === t.id} onClick={() => { setTab(t.id); setMoreOpen(false); }} aria-label={t.label}>
             <t.icon />
             <span className="tab-label">{t.label}</span>
           </button>
         ))}
+        <button data-on={moreOpen || primaryIndex < 0} onClick={() => setMoreOpen((open) => !open)}
+          aria-label="More sections" aria-expanded={moreOpen}>
+          <span aria-hidden="true" style={{ fontSize: 24, lineHeight: 1 }}>⋯</span>
+          <span className="tab-label">More</span>
+        </button>
       </nav>
 
       {toast && <div className="toast mn-toast">{toast}</div>}
