@@ -63,11 +63,11 @@ const TABS = [
   { id: "status", label: "Status", icon: Ico.status },
   { id: "quests", label: "Quests", icon: Ico.quest },
   { id: "calendar", label: "Log", icon: CalIcon },
-  { id: "gates", label: "Gates", icon: Ico.gate },
+  { id: "gates", label: "Goals", icon: Ico.gate },
   { id: "dungeon", label: "Body", icon: Ico.body },
   { id: "focus", label: "Focus", icon: FocusIcon },
-  { id: "creed", label: "Creed", icon: CreedIcon },
-  { id: "shadows", label: "Shadows", icon: Ico.shadow },
+  { id: "creed", label: "Motivation", icon: CreedIcon },
+  { id: "shadows", label: "Settings", icon: Ico.shadow },
 ];
 
 const PRIMARY_TABS = TABS.filter((t) => ["quests", "status", "calendar", "gates"].includes(t.id));
