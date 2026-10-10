@@ -1,0 +1,27 @@
+name: Validate Ascend
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Generate Android install icons
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y librsvg2-bin
+          rsvg-convert -w 192 -h 192 -o public/ascend-192.png public/ascend-icon.svg
+          rsvg-convert -w 512 -h 512 -o public/ascend-512.png public/ascend-icon.svg
+          file public/ascend-192.png public/ascend-512.png
+
+      - run: npm test
+      - run: npm run build

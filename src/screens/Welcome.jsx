@@ -158,6 +158,25 @@ export function Onboard({ profile, todayKey, onComplete }) {
     true,
   ][step];
 
+  // Let a newcomer reach a real board after choosing one focus. The full wizard
+  // remains available; existing profiles and their saved templates are untouched.
+  const quickStart = () => {
+    const domain = domainOf(a.domains[0]);
+    if (!domain) return;
+    const starterHabits = domain.habits
+      .filter((h) => h.cadence === "daily")
+      .sort((left, right) => (left.mins || 0) - (right.mins || 0))
+      .slice(0, 2)
+      .map((h) => h.key);
+    if (starterHabits.length < 1) return;
+    onComplete({
+      ...a,
+      domains: [domain.key],
+      goals: {},
+      habits: [...ANCHORS.map((h) => h.key), ...starterHabits],
+    });
+  };
+
   const next = () => (step < STEPS.length - 1 ? setStep(step + 1) : onComplete(a));
 
   return (
@@ -205,6 +224,17 @@ export function Onboard({ profile, todayKey, onComplete }) {
                 </div>
               );
             })}
+            {a.domains.length > 0 && (
+              <div style={{ marginTop: 18 }}>
+                <button className="solid" onClick={quickStart}>
+                  Start with a simple board
+                </button>
+                <p className="faint" style={{ margin: "8px 0 0" }}>
+                  A small starter board from your first focus. You can tailor it later.
+                  Or continue through setup for the full version.
+                </p>
+              </div>
+            )}
           </Win>
         )}
 
